@@ -1,142 +1,225 @@
-# eBay price prediction
-Predicting used iPhone 11 price with Scrapped eBay data.
+# eBay iPhone Price Prediction
 
-## This project contains:
-- Data scarpping on [eBay.ca](https://www.ebay.ca/) using Python (*beautifulsoup4*).
-- EDA of the data.
-- XGBoost and Random Forest models for Price and Shipping cost prediction respectively.
-- REST API deployment of the models using *FastAPI* (Python).
+[![ci](https://github.com/combax/ebay-iphone-price/actions/workflows/ci.yml/badge.svg)](https://github.com/combax/ebay-iphone-price/actions)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![Go](https://img.shields.io/badge/Go-1.23-00ADD8?logo=go&logoColor=white)](deploy/go)
+[![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
----
+**What a used iPhone actually sells for — an end-to-end ML system trained on
+real eBay sold prices, not asking prices.**
 
-## Scraping eBay data:
+- 📱 **30k+ sold listings scraped** — every iPhone from 8 to 17, X-gen, e-models, Air
+- 🎯 **MAE ≈ C$62 at R² 0.94** — every prediction ships with a calibrated 80% price band
+- 🏁 **56-fit GPU sweep** — 7 model families × 4 oversampling strategies, winner auto-tuned
+- ⚡ **Two servers, one truth** — FastAPI, or Go + ONNX that hard-fails on drift from python
+- ☁️ **One-command deploys** — Docker Compose, AWS (ECR + App Runner), K8s with autoscaling
 
-- **scraper.py** is used to scrape eBay data till 300 pages because after that there are no listings.
+```
+scrape ──> clean ──> train ──> export ──> serve
+  │          │         │          │         │
+  data/raw   data/     reports/   ONNX +    FastAPI ─ Docker ─ AWS
+  (CSV)      processed artifacts  serving.json  Go ─ Docker ─ K8s/EKS
+```
 
-- A basic filter is applied here to only select iPhone 11, 11 pro and 11 pro max models, exclude autions, and variable offers.
+## Quickstart
 
----
+```bash
+python -m venv .venv && . .venv/Scripts/activate     # or bin/activate on Linux
+pip install -e .[scrape,train,dev]
+# GPU torch for the MLP candidate (optional; match your CUDA toolkit):
+pip install torch --index-url https://download.pytorch.org/whl/cu121
 
-## Dataset created:
+python -m ebay_price.scrape          # sold listings -> data/raw/ebay_iphone_sold_<date>.csv
+python -m ebay_price.clean           # all sold CSVs -> data/processed/listings.csv
+python -m ebay_price.train           # reports/* + artifacts/*.joblib  (--no-gpu to force CPU)
+uvicorn ebay_price.api:app --port 8000
+```
 
-Dataset generated is stored in csv file but is not shared in the project for obvious reasons. (**6850 rows**)
+Re-running scrape + clean on later dates accumulates history: clean.py
+concatenates every `ebay_iphone_sold_*.csv` and dedupes by listing id.
+`python -m ebay_price.scrape --active` grabs live asking prices instead
+(not used for training).
 
-It contains following columns:
+### API
 
-- **iPhone** - Full title of the listing.
-- **Condition** - Categorical variable (Brand New, New (Other), Open Box, Certified - Refurbished, Excellent - Refurbished, Very Good - Refurbished, Good - Refurbished, Refurbished, Pre-Owned, Parts Only).
-- **Price** - Price in Candian Dollars. Format - C$500.
-- **Seller_type** - If eBay classifies seller as *Top Rated Seller* or not.
-- **Seller** - Name of the seller, number of reviews, rating of those review. Format - seller1(1000)94.6%.
-- **Shipping** - Shipping cost of the Phones. Format - C$20.
-- **Seller_rating** - eBay seller ratings in stars. Format - 4.5, 5, etc.
-- **Seller_location** - Country of the seller. Format - from United States.
+```bash
+curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d '{
+  "condition": "Pre-Owned",
+  "model": "13",
+  "storage_gb": 128,
+  "carrier_status": "Unlocked",
+  "battery_health_pct": 87
+}'
+# {"predicted_price_cad": 279.88, "price_range_cad": [230.58, 340.49],
+#  "predicted_shipping_cad": 2.34, "shipping_range_cad": [0.52, 6.76],
+#  "trained_on": "2026-07-07"}
+```
 
----
+The range is an 80% prediction band (see Training below). Omitted seller
+fields default to marketplace medians, so the answer prices a typical sale —
+pass `"seller_feedback_count": 0` to price a no-history seller instead
+(those genuinely clear ~25% lower). Interactive docs at `/docs`, liveness
+at `/health`.
 
-## EDA:
+## How it works
 
-### Data Cleaning:
+**Scraping** (`scrape.py`) — polite session against eBay.ca sold/completed
+search results, one query per iPhone family (240 listings/page, jittered
+delays, retry with fresh cookies, per-page CSV flush, stops when pagination
+repeats). Parses the `s-card` markup: title, condition, price, shipping,
+seller feedback, product stars, item location, sold date. Sold results
+include ended auctions — their final bid is a real price, so no Buy-It-Now
+filter in sold mode.
 
-1. iPhone column:
-   - Removing rows with "shop on eBay", with more than 1 value for storage, listings with "crack", "No Face ID", "Box Only".
-   - Removing listings with more than 1 values for Storage in same listing.
+**Why sold listings?** Asking prices for used phones are dominated by
+listings that never sell — identical configs get listed anywhere from C$139
+to C$1,420, and no model can learn from labels like that. Sold prices are
+market clearing prices; they are the label the models should see.
 
-2. Price column:
-   - Removing "C", "&" from listings.
-   - Removing non-numeric values to cast Price.
+**Cleaning** (`clean.py`) — drops non-phone results (accessories, multi-device
+lots, damaged units), extracts `model` / `storage_gb` / `carrier_status` /
+`battery_health_pct` / `sealed` from titles, parses C$ prices and sold dates,
+and applies junk guards: price C$20–4000, sales older than 12 months dropped
+(price drift), cross-border shipping quotes above C$500 nulled (freight junk —
+87% of sold listings ship from the US, so C$35–270 quotes are real). Titles
+naming several models ("iPhone 12/12 Pro") are dropped as ambiguous;
+multi-storage titles ("64GB/128GB") keep min storage, matching eBay's
+cheapest-variant price display. Every filter step is logged as a funnel
+(31,875 raw → 26,027 modeling rows on 2026-07-07).
 
-3. Shipping column:
-   - Removing " ", "C", "$", "shipping", and "estimate" from rows.
-   - Replacing "Free Shipping", nan, na rows with 0.
-   - Type case Shipping as float.
+**Training** (`train.py`) — one end-to-end sklearn `Pipeline` per target
+(impute + scale numerics, one-hot categoricals, model), fit on
+**log1p(price)** since prices are right-skewed. The full sweep compares:
 
-4. Seller_location:
-   - Removing "from" and empty spaces.
-   - Replacing na with Canada.
+- models: Ridge, RandomForest, HistGradientBoosting, XGBoost (CUDA),
+  LightGBM, CatBoost (CUDA), PyTorch MLP (CUDA)
+- oversampling for imbalanced regression (rare = sparse target ranges,
+  equal-width bins, partial 3× balancing): `none`, `random_over`,
+  `smotenc` (SMOTER-style with the target riding along), `gaussian_jitter`
+  (SMOGN-style noise on duplicated rows)
 
-5. seller column:
-   - Stripping into Seller_name, Seller_reviews, Seller_rating.
-   - Removing "%" from Seller_rating.
+The winner per target is tuned with `RandomizedSearchCV`, compared against
+the sweep defaults on the held-out test set (CV on resampled folds is
+optimistically biased), and saved as a single joblib artifact that takes
+**raw listing fields** in. **80% prediction bands** come from P10/P90
+quantiles of out-of-fold residuals in log1p space (split-conformal style),
+stored as two offsets in `metadata.json` — no extra model.
 
-6. Storage column(new):
-   - Extracting GB from iPhone column.
- 
-7. Carrier_status column(new):
-   - Extracting "Unlocked" & "Locked" from iPhone.
+## Results (sold listings scraped 2026-07-07, 26,027 rows)
 
----
+| target   | best model       | best sampling | RMSE (C$) | MAE (C$) |   R² | 80% band coverage |
+|----------|------------------|---------------|----------:|---------:|-----:|------------------:|
+| price    | LightGBM (tuned) | none          |    115.65 |    61.61 | 0.94 |             81.5% |
+| shipping | XGBoost          | random_over   |     70.27 |    47.56 | 0.56 |             78.5% |
 
-### Understanding Data:
+R² 0.94 partly reflects the wide scope (an iPhone 8 vs 17 Pro Max spread is
+easy to predict), so the honest per-segment view is test MAE by family —
+roughly 10–13% of each family's median sold price across the range:
 
-1. **iPhone models price distribution:**
+| family | median C$ | MAE C$ | | family | median C$ | MAE C$ |
+|--------|----------:|-------:|-|--------|----------:|-------:|
+| 8      |        85 |  23.02 | | 14     |       456 |  54.58 |
+| X/XR/XS|   118–136 |  21–32 | | 15     |       753 |  66.16 |
+| 11     |       182 |  26.40 | | 16     |       923 |  90.61 |
+| 12     |       225 |  34.31 | | 17     |     1,349 | 113.99 |
+| 13     |       339 |  48.68 | | Air    |     1,030 |  87.80 |
 
-![](/graphs/iphone_11_variants.png)
+Notes from the 56-fit sweep (full table:
+[`reports/model_comparison.md`](reports/model_comparison.md)):
 
-- We see lot of outliers on top and some on the bottom.
+- **No oversampling strategy beats unresampled training for price** at this
+  data size; `random_over` still helps shipping slightly. Resampling is a
+  hypothesis to test per target, not a default.
+- The PyTorch MLP is competitive (R² 0.92) but loses to every tree
+  ensemble — tabular data remains GBM country.
+- Shipping is the harder target: it predicts the *displayed* cross-border
+  shipping quote (87% of sold listings ship from the US), which sellers set
+  semi-arbitrarily. R² 0.56 with a wide but calibrated band is the honest
+  answer.
+- Remaining label noise: eBay shows the *listed* price for best-offer sales,
+  not the accepted offer, so some sold prices are mild overestimates.
 
-2. **iPhone conditions:**
+![comparison](reports/comparison_price.png)
+![pred vs actual](reports/pred_vs_actual_price.png)
 
-![](/graphs/Conditons_iPhones.png)
+## Deployment
 
-- **Removal of outliers** - Considered but because top 100 and bottom 100 outliers have high numbers from ***Brand New*** and ***Parts Only*** conditions respectively.
-- This would eliminate small number of cases they have in the data, which are important.
+### Docker (local)
 
-- Most iPhones are **Pre-Owned**.
+```bash
+# training stack (mounts data/, artifacts/, reports/):
+docker compose --profile train run --rm scrape
+docker compose --profile train run --rm clean
+docker compose --profile train run --rm train
 
-3. **Carrier Status:**
+# serving (bakes artifacts/ into the image):
+docker compose up api
+```
 
-![](/graphs/Carries_status.png)
+### Go + ONNX on Kubernetes
 
-4. **Shipping:**
+For high-traffic serving, `deploy/go` is a ~250-line Go microservice that
+runs the same models via ONNX Runtime: a small container, low memory, no
+python — cheaper pods and faster scale-up than the FastAPI image.
 
-![](/graphs/Shipping.png)
+```bash
+python -m ebay_price.export                            # ONNX + serving.json from the trained pipelines
+docker build -f deploy/go/Dockerfile -t ebay-price-go .
+docker run -p 8080:8080 ebay-price-go                  # same /predict + /health contract
+kubectl apply -f deploy/k8s/                           # Deployment + Service + HPA (2-10 pods @ 70% CPU)
+```
 
-- Most sellers are from ***USA***, but seller country plays important role in shipping prices.
+Everything the Go server needs — preprocessing constants, band offsets,
+validation vocabulary, parity vectors — is generated from the *fitted*
+sklearn pipelines by `export.py`. At startup the server replays the parity
+vectors through its own preprocessing + ONNX path and **refuses to serve if
+predictions drift >0.5%** from the python pipeline's recorded outputs, so
+the two serving paths cannot silently disagree.
 
----
+### AWS
 
-### Model Selection:
+```bash
+AWS_REGION=us-east-1 ./deploy/aws/push-ecr.sh      # build + push both images to ECR
+AWS_REGION=us-east-1 APPRUNNER_ECR_ROLE=arn:...:role/apprunner-ecr \
+    ./deploy/aws/apprunner.sh                      # FastAPI on App Runner (simplest managed option)
+```
 
+For the Go path on EKS, point `deploy/k8s/deployment.yaml` at the pushed
+`ebay-price-go` ECR image and `kubectl apply -f deploy/k8s/`.
 
-1. Results for ***LinearRegression***:
-  - Price Model -> RMSE: 102.79598072034938, R^2: 0.41722499573136074, Adjusted R^2: 0.4087964316200374
-  
-  - Shipping Model -> RMSE: 9.728743433873511, R^2: 0.40216063461271667, Adjusted R^2: 0.39351419751000793
+## Repo layout
 
-2. Results for ***RandomForest***:
-  - Price Model -> RMSE: 76.99599477296677, R^2: 0.6730473088388476, Adjusted R^2: 0.668318654214616
+```
+src/ebay_price/
+  scrape.py     eBay.ca sold-listings scraper, all iPhone families (CLI)
+  clean.py      raw CSVs -> modeling table with funnel logging (CLI)
+  sampling.py   oversampling strategies for imbalanced regression
+  models.py     model zoo + shared preprocessing pipeline + torch MLP
+  train.py      sweep, tuning, conformal bands, reports, artifacts (CLI)
+  export.py     ONNX + serving.json for the Go server (CLI)
+  api.py        FastAPI service (point prediction + 80% band)
+  config.py     paths + feature schema + model/storage vocabularies
+deploy/
+  go/           Go + ONNX serving microservice (Dockerfile builds from repo root)
+  k8s/          Deployment / Service / HorizontalPodAutoscaler
+  aws/          ECR push + App Runner scripts
+tests/          pytest suite (parsers, sampling, API, ONNX parity)
+data/           scraped CSVs (local only — eBay data is not redistributed)
+artifacts/      trained pipelines, metadata, ONNX exports (local only)
+reports/        aggregate metrics + plots (committed; no listing data)
+```
 
-  - ***Shipping Model -> RMSE: 7.589071483817029, R^2: 0.6362120623756692, Adjusted R^2: 0.6309506665835818***
+## Development
 
-3. Results for ***XGBoost***:
-  - ***Price Model -> RMSE: 73.03391165574511, R^2: 0.7058304125866577, Adjusted R^2: 0.7015758937604317***
-  
-  - Shipping Model -> RMSE: 7.899921763075357, R^2: 0.6058000289018368, Adjusted R^2: 0.6000987896504171
+```bash
+pytest          # unit + API + ONNX-parity tests
+ruff check .    # lint
+```
 
-**So Price model is better with XGBoost and Shipping model with Random Forest.**
+CI runs the python suite and compiles the Go server on every push/PR
+(`.github/workflows/ci.yml`).
 
----
+## License
 
-## Hyper-paramter tuning:
-
-1. Best hyperparameters for Price model: {'xgb__learning_rate': 0.1, 'xgb__max_depth': None, 'xgb__min_child_weight': 1, 'xgb__n_estimators': 100, 'xgb__subsample': 0.8}
-
-   - ***XGBoost Price Model RMSE: 72.64967722008117, R2: 0.7089175471758347, Adjusted R2: 0.7047076769903612***
-
-2. Best hyperparameters for Shipping model: {'rf__max_depth': 20, 'rf__min_samples_leaf': 2, 'rf__min_samples_split': 5, 'rf__n_estimators': 200}
-
-   - ***Random Forest Shipping Model RMSE: 7.487505593540977, R2: 0.6458841815622949, Adjusted R2: 0.6422410147059399***
-
----
-
-### REST API:
-
-- Models and Label encoders were saved using joblib into *models* and *variables* folders respectively.
-- **main.py** contains REST API implemented in FastAPI in Python.
-
----
-
-#### Future ideas:
-
-- To implement Neural Networks, Undersampling, or Oversampling to improve models.
+[MIT](LICENSE)

@@ -1,0 +1,61 @@
+{
+  "trained_on": "2026-07-07",
+  "data_file": "listings.csv",
+  "n_rows": 26027,
+  "gpu": true,
+  "target_transform": "log1p",
+  "versions": {
+    "scikit-learn": "1.9.0",
+    "xgboost": "3.3.0",
+    "lightgbm": "4.6.0",
+    "catboost": "1.2.10",
+    "pandas": "3.0.3"
+  },
+  "targets": {
+    "price": {
+      "model": "lightgbm",
+      "sampling": "none",
+      "best_params": {
+        "regressor__model__subsample": "0.9",
+        "regressor__model__num_leaves": "127",
+        "regressor__model__n_estimators": "1000",
+        "regressor__model__min_child_samples": "20",
+        "regressor__model__learning_rate": "0.05",
+        "regressor__model__colsample_bytree": "0.7"
+      },
+      "metrics": {
+        "rmse": 115.6515,
+        "mae": 61.6125,
+        "r2": 0.9366
+      },
+      "band_log_offsets": {
+        "p10": -0.193,
+        "p90": 0.1954
+      },
+      "band_test_coverage": 0.815,
+      "sweep_best_rmse": 117.7694,
+      "n_train": 20821,
+      "n_test": 5206
+    },
+    "shipping": {
+      "model": "xgboost",
+      "sampling": "random_over",
+      "best_params": {
+        "note": "sweep defaults kept \u2014 beat the tuned candidate on test"
+      },
+      "metrics": {
+        "rmse": 70.2705,
+        "mae": 47.5633,
+        "r2": 0.5642
+      },
+      "band_log_offsets": {
+        "p10": -0.7878,
+        "p90": 0.8434
+      },
+      "band_test_coverage": 0.785,
+      "sweep_best_rmse": 70.2705,
+      "n_train": 20631,
+      "n_test": 5158
+    }
+  }
+}

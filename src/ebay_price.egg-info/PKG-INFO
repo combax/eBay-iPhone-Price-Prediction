@@ -1,0 +1,244 @@
+Metadata-Version: 2.4
+Name: ebay-price
+Version: 1.0.0
+Summary: Used iPhone (8 -> 17) sold-price & shipping prediction from eBay.ca listings
+Author: Kharanshu Naghera
+License: MIT License
+        
+        Copyright (c) 2024 Kharanshu Naghera
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.115
+Requires-Dist: uvicorn[standard]>=0.30
+Requires-Dist: pandas>=2.2
+Requires-Dist: scikit-learn>=1.5
+Requires-Dist: xgboost>=2.1
+Requires-Dist: lightgbm>=4.3
+Requires-Dist: catboost>=1.2.5
+Requires-Dist: joblib>=1.4
+Requires-Dist: pydantic>=2.7
+Provides-Extra: scrape
+Requires-Dist: curl_cffi>=0.10; extra == "scrape"
+Requires-Dist: beautifulsoup4>=4.12; extra == "scrape"
+Requires-Dist: lxml>=5.2; extra == "scrape"
+Provides-Extra: train
+Requires-Dist: imbalanced-learn>=0.12; extra == "train"
+Requires-Dist: matplotlib>=3.8; extra == "train"
+Requires-Dist: tabulate>=0.9; extra == "train"
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: httpx>=0.27; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"
+Provides-Extra: export
+Requires-Dist: skl2onnx>=1.17; extra == "export"
+Requires-Dist: onnxmltools>=1.12; extra == "export"
+Requires-Dist: onnxruntime>=1.18; extra == "export"
+Dynamic: license-file
+
+# eBay iPhone Price Prediction
+
+[![ci](https://github.com/combax/Used-iPhone-11-Price-Predcition/actions/workflows/ci.yml/badge.svg)](https://github.com/combax/Used-iPhone-11-Price-Predcition/actions)
+[![python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+Scrapes **sold** used-iPhone listings (models **8 → 17**, including the X
+generation and Air) from [eBay.ca](https://www.ebay.ca), trains price and
+shipping-cost regressors on the transaction prices, and serves point
+predictions **with 80% prediction bands** over a FastAPI REST API.
+GPU-accelerated training (XGBoost + CatBoost on CUDA, optional PyTorch MLP),
+with a systematic comparison of **7 model families × 4 oversampling
+strategies** per target.
+
+Sold prices are the whole trick: asking prices for used phones are dominated
+by fantasy listings that never sell (identical iPhone 11 configs listed
+anywhere from C$139 to C$1,420), while sold listings are real market
+clearing prices — moving to them took price R² from **0.33 to 0.94** on 35×
+more data.
+
+```
+scrape ──> clean ──> train ──> serve
+  │          │         │         │
+  data/raw   data/     reports/  FastAPI + Docker
+  (CSV)      processed  + artifacts/*.joblib
+```
+
+## Quickstart
+
+```bash
+python -m venv .venv && . .venv/Scripts/activate     # or bin/activate on Linux
+pip install -e .[scrape,train,dev]
+# GPU torch for the MLP candidate (optional; match your CUDA toolkit):
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+
+python -m ebay_price.scrape          # sold listings -> data/raw/ebay_iphone_sold_<date>.csv
+python -m ebay_price.clean           # all sold CSVs -> data/processed/listings.csv
+python -m ebay_price.train           # reports/* + artifacts/*.joblib  (--no-gpu to force CPU)
+uvicorn ebay_price.api:app --port 8000
+```
+
+Re-running scrape + clean on later dates accumulates history: clean.py
+concatenates every `ebay_iphone_sold_*.csv` and dedupes by listing id.
+`python -m ebay_price.scrape --active` grabs live asking prices instead
+(not used for training).
+
+### Docker
+
+```bash
+# training stack (mounts data/, artifacts/, reports/):
+docker compose --profile train run --rm scrape
+docker compose --profile train run --rm clean
+docker compose --profile train run --rm train
+
+# serving (bakes artifacts/ into the image):
+docker compose up api
+```
+
+### API
+
+```bash
+curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d '{
+  "condition": "Pre-Owned",
+  "model": "13",
+  "storage_gb": 128,
+  "carrier_status": "Unlocked",
+  "seller_feedback_pct": 99.1,
+  "seller_feedback_count": 1500,
+  "battery_health_pct": 87
+}'
+# {"predicted_price_cad": 330.55, "price_range_cad": [272.4, 402.1],
+#  "predicted_shipping_cad": 12.3, "shipping_range_cad": [5.2, 29.1],
+#  "trained_on": "2026-07-07"}
+```
+
+The range is an 80% prediction band (see Training below). Seller fields
+default to marketplace medians, so omitting them prices a typical sale —
+pass `"seller_feedback_count": 0` to price a no-history seller instead
+(those genuinely clear ~25% lower). Interactive docs at `/docs`, liveness
+at `/health`.
+
+## How it works
+
+**Scraping** (`scrape.py`) — polite session against eBay.ca sold/completed
+search results, one query per iPhone family (240 listings/page, jittered
+delays, retry with fresh cookies, per-page CSV flush, stops when pagination
+repeats). Parses the 2026 `s-card` markup: title, condition, price, shipping,
+seller feedback, product stars, item location, sold date. Sold results
+include ended auctions — their final bid is a real price, so no Buy-It-Now
+filter in sold mode.
+
+**Cleaning** (`clean.py`) — drops non-phone results (accessories, multi-device
+lots, damaged units), extracts `model` / `storage_gb` / `carrier_status` /
+`battery_health_pct` / `sealed` from titles, parses C$ prices and sold dates,
+and applies junk guards: price C$20–4000, sales older than 12 months dropped
+(price drift), cross-border shipping quotes above C$500 nulled (freight junk —
+87% of sold listings ship from the US, so C$35–270 quotes are real). Titles
+naming several models ("iPhone 12/12 Pro") are dropped as ambiguous;
+multi-storage titles ("64GB/128GB") keep min storage, matching eBay's
+cheapest-variant price display. Every filter step is logged as a funnel
+(31,875 raw → 26,027 modeling rows on 2026-07-07).
+
+**Training** (`train.py`) — one end-to-end sklearn `Pipeline` per target
+(impute + scale numerics, one-hot categoricals, model), fit on
+**log1p(price)** since prices are right-skewed. The full sweep compares:
+
+- models: Ridge, RandomForest, HistGradientBoosting, XGBoost (CUDA),
+  LightGBM, CatBoost (CUDA), PyTorch MLP (CUDA)
+- oversampling for imbalanced regression (rare = sparse target ranges,
+  equal-width bins, partial 3× balancing): `none`, `random_over`,
+  `smotenc` (SMOTER-style with the target riding along), `gaussian_jitter`
+  (SMOGN-style noise on duplicated rows)
+
+The winner per target is tuned with `RandomizedSearchCV`, compared against
+the sweep defaults on the held-out test set (CV on resampled folds is
+optimistically biased), and saved as a single joblib artifact that takes
+**raw listing fields** in. **80% prediction bands** come from P10/P90
+quantiles of out-of-fold residuals in log1p space (split-conformal style),
+stored as two offsets in `metadata.json` — no extra model.
+
+## Results (sold listings scraped 2026-07-07, 26,027 rows)
+
+| target   | best model       | best sampling | RMSE (C$) | MAE (C$) |   R² | 80% band coverage |
+|----------|------------------|---------------|----------:|---------:|-----:|------------------:|
+| price    | LightGBM (tuned) | none          |    115.65 |    61.61 | 0.94 |             81.5% |
+| shipping | XGBoost          | random_over   |     70.27 |    47.56 | 0.56 |             78.5% |
+
+R² 0.94 partly reflects the wide scope (an iPhone 8 vs 17 Pro Max spread is
+easy to predict), so the honest per-segment view is test MAE by family —
+roughly 10–13% of each family's median sold price across the range:
+
+| family | median C$ | MAE C$ | | family | median C$ | MAE C$ |
+|--------|----------:|-------:|-|--------|----------:|-------:|
+| 8      |        85 |  23.02 | | 14     |       456 |  54.58 |
+| X/XR/XS|   118–136 |  21–32 | | 15     |       753 |  66.16 |
+| 11     |       182 |  26.40 | | 16     |       923 |  90.61 |
+| 12     |       225 |  34.31 | | 17     |     1,349 | 113.99 |
+| 13     |       339 |  48.68 | | Air    |     1,030 |  87.80 |
+
+Notes from the 56-fit sweep (full table:
+[`reports/model_comparison.md`](reports/model_comparison.md)):
+
+- **Oversampling stopped mattering for price** once the data was 26k sold
+  rows (winner: `none`) — on the old 755-row asking-price data it was worth
+  +0.05 R². It still helps shipping slightly (`random_over`).
+- The PyTorch MLP went from useless (R² 0.07–0.18 on 755 rows) to
+  competitive (0.92) on 26k rows, but still lost to every tree ensemble —
+  tabular data remains GBM country.
+- Shipping is the harder target now: it predicts the *displayed* cross-border
+  shipping quote (87% of sold listings ship from the US), which sellers set
+  semi-arbitrarily. R² 0.56 with a wide but calibrated band is the honest
+  answer.
+- Remaining label noise: eBay shows the *listed* price for best-offer sales,
+  not the accepted offer, so some sold prices are mild overestimates.
+
+![comparison](reports/comparison_price.png)
+![pred vs actual](reports/pred_vs_actual_price.png)
+
+## Repo layout
+
+```
+src/ebay_price/
+  scrape.py     eBay.ca sold-listings scraper, all iPhone families (CLI)
+  clean.py      raw CSVs -> modeling table with funnel logging (CLI)
+  sampling.py   oversampling strategies for imbalanced regression
+  models.py     model zoo + shared preprocessing pipeline + torch MLP
+  train.py      sweep, tuning, conformal bands, reports, artifacts (CLI)
+  api.py        FastAPI service (point prediction + 80% band)
+  config.py     paths + feature schema + model/storage vocabularies
+tests/          pytest suite (parsers, sampling, API)
+data/           raw + processed CSVs (gitignored; archive-2024/ has the old dataset)
+artifacts/      trained pipelines + metadata (gitignored)
+reports/        metrics, comparison plots (committed)
+```
+
+## Development
+
+```bash
+pytest          # unit + API tests
+ruff check .    # lint
+```
+
+CI runs both on every push/PR (`.github/workflows/ci.yml`).
+
+## License
+
+[MIT](LICENSE)

@@ -1,0 +1,1152 @@
+{
+ "trained_on": "2026-07-07",
+ "vocab": {
+  "condition": [
+   "Parts Only",
+   "Pre-Owned",
+   "Good - Refurbished",
+   "Very Good - Refurbished",
+   "Excellent - Refurbished",
+   "Certified - Refurbished",
+   "Refurbished",
+   "Open Box",
+   "New (Other)",
+   "Brand New"
+  ],
+  "model": [
+   "8",
+   "8 Plus",
+   "X",
+   "XR",
+   "XS",
+   "XS Max",
+   "11",
+   "11 Pro",
+   "11 Pro Max",
+   "12 Mini",
+   "12",
+   "12 Pro",
+   "12 Pro Max",
+   "13 Mini",
+   "13",
+   "13 Pro",
+   "13 Pro Max",
+   "14",
+   "14 Plus",
+   "14 Pro",
+   "14 Pro Max",
+   "15",
+   "15 Plus",
+   "15 Pro",
+   "15 Pro Max",
+   "16e",
+   "16",
+   "16 Plus",
+   "16 Pro",
+   "16 Pro Max",
+   "17e",
+   "17",
+   "17 Pro",
+   "17 Pro Max",
+   "Air"
+  ],
+  "carrier_status": [
+   "Locked",
+   "Unlocked"
+  ],
+  "storage_gb": [
+   64,
+   128,
+   256,
+   512,
+   1024,
+   2048
+  ]
+ },
+ "targets": {
+  "price": {
+   "onnx": "price.onnx",
+   "prep": {
+    "numeric": [
+     "storage_gb",
+     "seller_feedback_pct",
+     "seller_feedback_count",
+     "product_stars",
+     "product_ratings_count",
+     "sealed",
+     "battery_health_pct"
+    ],
+    "categorical": [
+     "condition",
+     "location",
+     "model",
+     "carrier_status"
+    ],
+    "impute_median": [
+     128.0,
+     99.6,
+     5500.0,
+     4.5,
+     7.0,
+     0.0,
+     100.0
+    ],
+    "scale_mean": [
+     245.59204649152298,
+     97.90888526007396,
+     42450.70155131838,
+     4.6041496565967055,
+     21.97915566015081,
+     0.040632054176072234,
+     99.92344267806541
+    ],
+    "scale_std": [
+     239.69900385906936,
+     11.700531966893175,
+     112373.57556697103,
+     0.31727411328224353,
+     38.88668776157043,
+     0.19743629440785443,
+     1.0773809029091026
+    ],
+    "categories": {
+     "condition": [
+      "Brand New",
+      "Excellent - Refurbished",
+      "Good - Refurbished",
+      "New (Other)",
+      "Open Box",
+      "Parts Only",
+      "Pre-Owned",
+      "Very Good - Refurbished"
+     ],
+     "location": [
+      "Albania",
+      "Australia",
+      "Belgium",
+      "Bulgaria",
+      "Canada",
+      "China",
+      "Cyprus",
+      "Czech Republic",
+      "France",
+      "Germany",
+      "Hong Kong",
+      "Hungary",
+      "Israel",
+      "Italy",
+      "Japan",
+      "Latvia",
+      "Lithuania",
+      "Macedonia",
+      "Mexico",
+      "New Zealand",
+      "Norway",
+      "Panama",
+      "Portugal",
+      "Puerto Rico",
+      "Slovenia",
+      "South Africa",
+      "South Korea",
+      "Spain",
+      "Sweden",
+      "Taiwan",
+      "Turkey",
+      "Ukraine",
+      "United Kingdom",
+      "United States"
+     ],
+     "model": [
+      "11",
+      "11 Pro",
+      "11 Pro Max",
+      "12",
+      "12 Mini",
+      "12 Pro",
+      "12 Pro Max",
+      "13",
+      "13 Mini",
+      "13 Pro",
+      "13 Pro Max",
+      "14",
+      "14 Plus",
+      "14 Pro",
+      "14 Pro Max",
+      "15",
+      "15 Plus",
+      "15 Pro",
+      "15 Pro Max",
+      "16",
+      "16 Plus",
+      "16 Pro",
+      "16 Pro Max",
+      "16e",
+      "17",
+      "17 Pro",
+      "17 Pro Max",
+      "17e",
+      "8",
+      "8 Plus",
+      "Air",
+      "X",
+      "XR",
+      "XS",
+      "XS Max"
+     ],
+     "carrier_status": [
+      "Locked",
+      "Unlocked"
+     ]
+    }
+   },
+   "band_log_offsets": {
+    "p10": -0.193,
+    "p90": 0.1954
+   },
+   "parity": [
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "15 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 11400.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 858.9016
+    },
+    {
+     "input": {
+      "condition": "Brand New",
+      "location": "United States",
+      "model": "17 Pro Max",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.7,
+      "seller_feedback_count": 5800.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 1338.297
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "Canada",
+      "model": "12",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 115.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 55.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 108.0124
+    },
+    {
+     "input": {
+      "condition": "Excellent - Refurbished",
+      "location": "United States",
+      "model": "16 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 164000.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 1362.8938
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "13 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 18100.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 7.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 483.8864
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "12 Mini",
+      "carrier_status": "Unlocked",
+      "storage_gb": 64.0,
+      "seller_feedback_pct": 99.7,
+      "seller_feedback_count": 146100.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 54.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 245.5108
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "16 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 921.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 1232.5452
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "16 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 95.7,
+      "seller_feedback_count": 23.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 730.7445
+    },
+    {
+     "input": {
+      "condition": "New (Other)",
+      "location": "United States",
+      "model": "13",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 8.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 261.6165
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "United States",
+      "model": "13 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 35700.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 408.3842
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "United States",
+      "model": "X",
+      "carrier_status": "Unlocked",
+      "storage_gb": 64.0,
+      "seller_feedback_pct": 99.8,
+      "seller_feedback_count": 408.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 161.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 74.1951
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "United States",
+      "model": "14 Pro Max",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 3700.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 7.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 307.626
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "13 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 35700.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 7.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 367.2738
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "15",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.5,
+      "seller_feedback_count": 195500.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 4.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 553.5553
+    },
+    {
+     "input": {
+      "condition": "Good - Refurbished",
+      "location": "United States",
+      "model": "12 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.5,
+      "seller_feedback_count": 28900.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 45.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 413.8628
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "14 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 719.0,
+      "product_stars": 3.5,
+      "product_ratings_count": 3.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 690.694
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 729.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 908.5207
+    },
+    {
+     "input": {
+      "condition": "New (Other)",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 39400.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": 100.0
+     },
+     "expected": 1208.209
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "8 Plus",
+      "carrier_status": "Locked",
+      "storage_gb": 64.0,
+      "seller_feedback_pct": 99.2,
+      "seller_feedback_count": 368700.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 83.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 152.2881
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "16 Pro Max",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 4100.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 939.0143
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "Canada",
+      "model": "13",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 56.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 16.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 268.6523
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "13",
+      "carrier_status": "Unlocked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 35700.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 309.7434
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "Canada",
+      "model": "16",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 98.8,
+      "seller_feedback_count": 84.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 251.2639
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Unlocked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 96.6,
+      "seller_feedback_count": 104.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 626.2407
+    },
+    {
+     "input": {
+      "condition": "Brand New",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 96.8,
+      "seller_feedback_count": 843100.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 893.2322
+    }
+   ]
+  },
+  "shipping": {
+   "onnx": "shipping.onnx",
+   "prep": {
+    "numeric": [
+     "storage_gb",
+     "seller_feedback_pct",
+     "seller_feedback_count",
+     "product_stars",
+     "product_ratings_count",
+     "sealed",
+     "battery_health_pct"
+    ],
+    "categorical": [
+     "condition",
+     "location",
+     "model",
+     "carrier_status"
+    ],
+    "impute_median": [
+     256.0,
+     99.6,
+     6100.0,
+     4.5,
+     5.0,
+     0.0,
+     100.0
+    ],
+    "scale_mean": [
+     263.58788084528555,
+     98.40624628702369,
+     46980.72845059266,
+     4.599465331409658,
+     18.10396333701095,
+     0.050609635350363516,
+     99.92206285892104
+    ],
+    "scale_std": [
+     235.796781368674,
+     9.369596698682296,
+     127501.88926270856,
+     0.31860646913372015,
+     33.347585683178856,
+     0.2191992248162998,
+     1.0787053739458554
+    ],
+    "categories": {
+     "condition": [
+      "Brand New",
+      "Excellent - Refurbished",
+      "Good - Refurbished",
+      "New (Other)",
+      "Open Box",
+      "Parts Only",
+      "Pre-Owned",
+      "Very Good - Refurbished"
+     ],
+     "location": [
+      "Albania",
+      "Australia",
+      "Belgium",
+      "Bulgaria",
+      "Canada",
+      "China",
+      "Cyprus",
+      "Czech Republic",
+      "France",
+      "Germany",
+      "Hong Kong",
+      "Hungary",
+      "Israel",
+      "Italy",
+      "Japan",
+      "Latvia",
+      "Lithuania",
+      "Macedonia",
+      "Montenegro",
+      "New Zealand",
+      "Norway",
+      "Panama",
+      "Portugal",
+      "Puerto Rico",
+      "Slovenia",
+      "South Africa",
+      "South Korea",
+      "Spain",
+      "Sweden",
+      "Taiwan",
+      "Turkey",
+      "Ukraine",
+      "United Kingdom",
+      "United States"
+     ],
+     "model": [
+      "11",
+      "11 Pro",
+      "11 Pro Max",
+      "12",
+      "12 Mini",
+      "12 Pro",
+      "12 Pro Max",
+      "13",
+      "13 Mini",
+      "13 Pro",
+      "13 Pro Max",
+      "14",
+      "14 Plus",
+      "14 Pro",
+      "14 Pro Max",
+      "15",
+      "15 Plus",
+      "15 Pro",
+      "15 Pro Max",
+      "16",
+      "16 Plus",
+      "16 Pro",
+      "16 Pro Max",
+      "16e",
+      "17",
+      "17 Pro",
+      "17 Pro Max",
+      "17e",
+      "8",
+      "8 Plus",
+      "Air",
+      "X",
+      "XR",
+      "XS",
+      "XS Max"
+     ],
+     "carrier_status": [
+      "Locked",
+      "Unlocked"
+     ]
+    }
+   },
+   "band_log_offsets": {
+    "p10": -0.7878,
+    "p90": 0.8434
+   },
+   "parity": [
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "15 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 11400.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 166.5536
+    },
+    {
+     "input": {
+      "condition": "Brand New",
+      "location": "United States",
+      "model": "17 Pro Max",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.7,
+      "seller_feedback_count": 5800.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 291.0755
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "Canada",
+      "model": "12",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 115.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 55.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 4.8052
+    },
+    {
+     "input": {
+      "condition": "Excellent - Refurbished",
+      "location": "United States",
+      "model": "16 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 164000.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 5.9453
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "13 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 18100.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 7.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 115.2069
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "12 Mini",
+      "carrier_status": "Unlocked",
+      "storage_gb": 64.0,
+      "seller_feedback_pct": 99.7,
+      "seller_feedback_count": 146100.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 54.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 76.0838
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "16 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 921.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 218.5023
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "16 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 95.7,
+      "seller_feedback_count": 23.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 186.5565
+    },
+    {
+     "input": {
+      "condition": "New (Other)",
+      "location": "United States",
+      "model": "13",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 8.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 82.7907
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "United States",
+      "model": "13 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 35700.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 49.0489
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "United States",
+      "model": "X",
+      "carrier_status": "Unlocked",
+      "storage_gb": 64.0,
+      "seller_feedback_pct": 99.8,
+      "seller_feedback_count": 408.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 161.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 42.6216
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "United States",
+      "model": "14 Pro Max",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 3700.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 7.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 63.5843
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "13 Pro",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 35700.0,
+      "product_stars": 4.0,
+      "product_ratings_count": 7.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 61.1882
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "15",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.5,
+      "seller_feedback_count": 195500.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 4.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 0.0723
+    },
+    {
+     "input": {
+      "condition": "Good - Refurbished",
+      "location": "United States",
+      "model": "12 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 99.5,
+      "seller_feedback_count": 28900.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 45.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 137.9247
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "14 Pro Max",
+      "carrier_status": "Unlocked",
+      "storage_gb": 512.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 719.0,
+      "product_stars": 3.5,
+      "product_ratings_count": 3.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 129.0574
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 729.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 171.5176
+    },
+    {
+     "input": {
+      "condition": "New (Other)",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 39400.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": 100.0
+     },
+     "expected": 239.494
+    },
+    {
+     "input": {
+      "condition": "Very Good - Refurbished",
+      "location": "United States",
+      "model": "8 Plus",
+      "carrier_status": "Locked",
+      "storage_gb": 64.0,
+      "seller_feedback_pct": 99.2,
+      "seller_feedback_count": 368700.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 83.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 0.0
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "16 Pro Max",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.9,
+      "seller_feedback_count": 4100.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 156.3831
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "Canada",
+      "model": "13",
+      "carrier_status": "Unlocked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 100.0,
+      "seller_feedback_count": 56.0,
+      "product_stars": 4.5,
+      "product_ratings_count": 16.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 12.9285
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "13",
+      "carrier_status": "Unlocked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 99.6,
+      "seller_feedback_count": 35700.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 47.6701
+    },
+    {
+     "input": {
+      "condition": "Parts Only",
+      "location": "Canada",
+      "model": "16",
+      "carrier_status": "Locked",
+      "storage_gb": 128.0,
+      "seller_feedback_pct": 98.8,
+      "seller_feedback_count": 84.0,
+      "product_stars": 5.0,
+      "product_ratings_count": 5.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 18.1673
+    },
+    {
+     "input": {
+      "condition": "Pre-Owned",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Unlocked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 96.6,
+      "seller_feedback_count": 104.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 139.7749
+    },
+    {
+     "input": {
+      "condition": "Brand New",
+      "location": "United States",
+      "model": "17",
+      "carrier_status": "Locked",
+      "storage_gb": 256.0,
+      "seller_feedback_pct": 96.8,
+      "seller_feedback_count": 843100.0,
+      "product_stars": null,
+      "product_ratings_count": 0.0,
+      "sealed": 0.0,
+      "battery_health_pct": null
+     },
+     "expected": 259.1337
+    }
+   ]
+  }
+ }
+}

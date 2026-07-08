@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .
+      target: api
+    image: ebay-price-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # usage:
+  #   docker compose run --rm scrape
+  #   docker compose run --rm clean
+  #   docker compose run --rm train
+  scrape:
+    build: &train-build
+      context: .
+      target: train
+    image: ebay-price-train
+    profiles: ["train"]
+    volumes: &train-volumes
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./reports:/app/reports
+    command: python -m ebay_price.scrape
+
+  clean:
+    build: *train-build
+    image: ebay-price-train
+    profiles: ["train"]
+    volumes: *train-volumes
+    command: python -m ebay_price.clean
+
+  train:
+    build: *train-build
+    image: ebay-price-train
+    profiles: ["train"]
+    volumes: *train-volumes
+    command: python -m ebay_price.train --no-gpu
+    # with the NVIDIA container toolkit, drop --no-gpu and uncomment:
+    # gpus: all
