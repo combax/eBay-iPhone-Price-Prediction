@@ -1,6 +1,6 @@
 # eBay iPhone Price Prediction
 
-[![ci](https://github.com/combax/ebay-iphone-price/actions/workflows/ci.yml/badge.svg)](https://github.com/combax/ebay-iphone-price/actions)
+[![CI](https://img.shields.io/badge/CI-pytest%20%2B%20ruff%20%2B%20go%20build-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Go](https://img.shields.io/badge/Go-1.23-00ADD8?logo=go&logoColor=white)](deploy/go)
 [![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](Dockerfile)
